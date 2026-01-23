@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { phases } from "@/content/phases"
-import { Lesson, Phase, Section } from "@/content/types"
+import { getPhasesByLevel, phasesByLevel } from "@/content/phases/byLevel"
+import { Lesson, Phase, CourseLevel, LEVEL_CONFIGS } from "@/content/types"
 import { Quiz } from "@/components/lesson/Quiz"
 import {
   ChevronLeft,
@@ -20,7 +20,9 @@ import {
   CheckCircle,
   BookOpen,
   Menu,
-  X
+  X,
+  Video,
+  AlertCircle
 } from "lucide-react"
 
 interface LessonProgress {
@@ -29,7 +31,16 @@ interface LessonProgress {
   completedAt?: string
 }
 
-function getAllLessons(): { lesson: Lesson; phase: Phase }[] {
+interface UserProgress {
+  selectedLevel: CourseLevel | null
+  levelSelectedAt: string | null
+  lessons: LessonProgress[]
+}
+
+const STORAGE_KEY = "webapp-course-progress"
+
+function getAllLessonsForLevel(level: CourseLevel): { lesson: Lesson; phase: Phase }[] {
+  const phases = getPhasesByLevel(level)
   const allLessons: { lesson: Lesson; phase: Phase }[] = []
   for (const phase of phases) {
     for (const lesson of phase.lessons) {
@@ -39,11 +50,23 @@ function getAllLessons(): { lesson: Lesson; phase: Phase }[] {
   return allLessons
 }
 
-function findLessonById(lessonId: string): { lesson: Lesson; phase: Phase } | null {
+function findLessonById(lessonId: string, level: CourseLevel): { lesson: Lesson; phase: Phase } | null {
+  const phases = getPhasesByLevel(level)
   for (const phase of phases) {
     const lesson = phase.lessons.find(l => l.id === lessonId)
     if (lesson) {
       return { lesson, phase }
+    }
+  }
+  return null
+}
+
+// Try to find lesson in any level (for fallback)
+function findLessonInAnyLevel(lessonId: string): { lesson: Lesson; phase: Phase; level: CourseLevel } | null {
+  for (const level of ['beginner', 'standard', 'advanced'] as CourseLevel[]) {
+    const result = findLessonById(lessonId, level)
+    if (result) {
+      return { ...result, level }
     }
   }
   return null
@@ -54,33 +77,70 @@ export default function LessonPage() {
   const router = useRouter()
   const lessonId = params.lessonId as string
 
-  const [progress, setProgress] = useState<LessonProgress[]>([])
+  const [userProgress, setUserProgress] = useState<UserProgress>({
+    selectedLevel: null,
+    levelSelectedAt: null,
+    lessons: []
+  })
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0)
   const [showSidebar, setShowSidebar] = useState(false)
   const [isLoaded, setIsLoaded] = useState(false)
 
   useEffect(() => {
-    const saved = localStorage.getItem("sdgs-pro-course-progress")
+    const saved = localStorage.getItem(STORAGE_KEY)
     if (saved) {
-      setProgress(JSON.parse(saved))
+      setUserProgress(JSON.parse(saved))
     }
     setIsLoaded(true)
   }, [])
 
-  const lessonData = findLessonById(lessonId)
-  const allLessons = getAllLessons()
+  // Redirect to dashboard if no level selected
+  useEffect(() => {
+    if (isLoaded && !userProgress.selectedLevel) {
+      // Try to find the lesson and determine its level
+      const found = findLessonInAnyLevel(lessonId)
+      if (found) {
+        // Auto-select the level based on the lesson
+        const newProgress: UserProgress = {
+          selectedLevel: found.level,
+          levelSelectedAt: new Date().toISOString(),
+          lessons: []
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newProgress))
+        setUserProgress(newProgress)
+      } else {
+        router.push('/dashboard')
+      }
+    }
+  }, [isLoaded, userProgress.selectedLevel, lessonId, router])
+
+  if (!isLoaded || !userProgress.selectedLevel) {
+    return (
+      <div className="container py-8">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 w-64 bg-muted rounded" />
+          <div className="h-96 bg-muted rounded" />
+        </div>
+      </div>
+    )
+  }
+
+  const lessonData = findLessonById(lessonId, userProgress.selectedLevel)
+  const allLessons = getAllLessonsForLevel(userProgress.selectedLevel)
   const currentIndex = allLessons.findIndex(l => l.lesson.id === lessonId)
   const prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null
   const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null
+  const levelConfig = LEVEL_CONFIGS[userProgress.selectedLevel]
 
   if (!lessonData) {
     return (
       <div className="container py-8">
         <Card>
           <CardContent className="py-8 text-center">
+            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h1 className="text-2xl font-bold">レッスンが見つかりません</h1>
             <p className="mt-2 text-muted-foreground">
-              指定されたレッスンは存在しません。
+              このレッスンは{levelConfig.nameJa}コースには含まれていません。
             </p>
             <Button asChild className="mt-4">
               <Link href="/dashboard">ダッシュボードへ戻る</Link>
@@ -93,21 +153,26 @@ export default function LessonPage() {
 
   const { lesson, phase } = lessonData
   const currentSection = lesson.sections[currentSectionIndex]
-  const isCompleted = progress.some(p => p.lessonId === lessonId && p.completed)
+  const isCompleted = userProgress.lessons.some(p => p.lessonId === lessonId && p.completed)
   const sectionProgress = ((currentSectionIndex + 1) / lesson.sections.length) * 100
 
   const markAsComplete = () => {
-    const newProgress: LessonProgress = {
+    const newLessonProgress: LessonProgress = {
       lessonId,
       completed: true,
       completedAt: new Date().toISOString()
     }
 
-    const updatedProgress = progress.filter(p => p.lessonId !== lessonId)
-    updatedProgress.push(newProgress)
+    const updatedLessons = userProgress.lessons.filter(p => p.lessonId !== lessonId)
+    updatedLessons.push(newLessonProgress)
 
-    setProgress(updatedProgress)
-    localStorage.setItem("sdgs-pro-course-progress", JSON.stringify(updatedProgress))
+    const newProgress: UserProgress = {
+      ...userProgress,
+      lessons: updatedLessons
+    }
+
+    setUserProgress(newProgress)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newProgress))
   }
 
   const goToNextSection = () => {
@@ -124,16 +189,8 @@ export default function LessonPage() {
     }
   }
 
-  if (!isLoaded) {
-    return (
-      <div className="container py-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 w-64 bg-muted rounded" />
-          <div className="h-96 bg-muted rounded" />
-        </div>
-      </div>
-    )
-  }
+  // Determine the unit/phase label based on level
+  const unitLabel = userProgress.selectedLevel === 'beginner' ? 'Unit' : 'Phase'
 
   return (
     <div className="flex min-h-[calc(100vh-8rem)]">
@@ -146,7 +203,12 @@ export default function LessonPage() {
         <div className="flex flex-col h-full">
           <div className="p-4 border-b flex items-center justify-between">
             <div>
-              <Badge variant="outline">Phase {phase.id}</Badge>
+              <div className="flex items-center gap-2 mb-1">
+                <Badge variant="outline">{unitLabel} {phase.id}</Badge>
+                <Badge variant="secondary" className="text-xs">
+                  {levelConfig.icon} {levelConfig.nameJa}
+                </Badge>
+              </div>
               <h2 className="mt-1 font-semibold text-sm truncate">{lesson.title}</h2>
             </div>
             <Button
@@ -174,7 +236,13 @@ export default function LessonPage() {
                       : "hover:bg-muted"
                   }`}
                 >
-                  <span className="text-xs opacity-70">{index + 1}.</span> {section.title}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs opacity-70">{index + 1}.</span>
+                    <span className="flex-1 truncate">{section.title}</span>
+                    {section.videoRequired && (
+                      <Video className="h-3 w-3 opacity-70" />
+                    )}
+                  </div>
                 </button>
               ))}
             </div>
@@ -235,7 +303,7 @@ export default function LessonPage() {
               ダッシュボード
             </Link>
             <ChevronRight className="h-4 w-4" />
-            <span>Phase {phase.id}</span>
+            <span>{unitLabel} {phase.id}</span>
             <ChevronRight className="h-4 w-4" />
             <span className="text-foreground">Lesson {lesson.number}</span>
           </div>
@@ -243,11 +311,31 @@ export default function LessonPage() {
           {/* Lesson Header (First section only) */}
           {currentSectionIndex === 0 && (
             <div className="mb-8">
-              <Badge variant="secondary" className="mb-2">
-                Phase {phase.id} - Lesson {lesson.number}
-              </Badge>
+              <div className="flex items-center gap-2 mb-2">
+                <Badge variant="secondary">
+                  {unitLabel} {phase.id} - Lesson {lesson.number}
+                </Badge>
+                <Badge variant="outline" className="text-xs">
+                  {levelConfig.icon} {levelConfig.nameJa}
+                </Badge>
+              </div>
               <h1 className="text-3xl font-bold">{lesson.title}</h1>
               <p className="mt-2 text-muted-foreground">{lesson.description}</p>
+
+              {/* Video Notice for Beginner Level */}
+              {userProgress.selectedLevel === 'beginner' && (
+                <Card className="mt-4 border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950">
+                  <CardContent className="py-4">
+                    <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                      <Video className="h-5 w-5" />
+                      <span className="font-medium">動画で学習できます</span>
+                    </div>
+                    <p className="mt-1 text-sm text-blue-600 dark:text-blue-400">
+                      このレッスンは動画を見ながら学習できます。テキストを読まなくても大丈夫です。
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Objectives */}
               <Card className="mt-6">
@@ -269,6 +357,26 @@ export default function LessonPage() {
                 </CardContent>
               </Card>
             </div>
+          )}
+
+          {/* Video Placeholder (for beginner level) */}
+          {currentSection.videoRequired && (
+            <Card className="mb-6 bg-slate-100 dark:bg-slate-900">
+              <CardContent className="py-8">
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-full max-w-2xl aspect-video bg-slate-200 dark:bg-slate-800 rounded-lg flex items-center justify-center mb-4">
+                    <div className="text-muted-foreground">
+                      <Video className="h-16 w-16 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">動画プレースホルダー</p>
+                      <p className="text-xs mt-1">（実際の動画はここに表示されます）</p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    動画を見ながら、一緒に操作してみましょう
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* Section Content */}

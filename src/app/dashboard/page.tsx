@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { phases } from "@/content/phases"
-import { BookOpen, Clock, CheckCircle, Circle, PlayCircle, Trophy, Target } from "lucide-react"
+import { LevelSelector } from "@/components/level/LevelSelector"
+import { getPhasesByLevel } from "@/content/phases/byLevel"
+import { CourseLevel, LEVEL_CONFIGS } from "@/content/types"
+import { BookOpen, Clock, CheckCircle, Circle, PlayCircle, Trophy, Target, Settings, ArrowRight } from "lucide-react"
 
 interface LessonProgress {
   lessonId: string
@@ -15,20 +17,85 @@ interface LessonProgress {
   completedAt?: string
 }
 
+interface UserProgress {
+  selectedLevel: CourseLevel | null
+  levelSelectedAt: string | null
+  lessons: LessonProgress[]
+}
+
+const STORAGE_KEY = "webapp-course-progress"
+
 export default function DashboardPage() {
-  const [progress, setProgress] = useState<LessonProgress[]>([])
+  const [userProgress, setUserProgress] = useState<UserProgress>({
+    selectedLevel: null,
+    levelSelectedAt: null,
+    lessons: []
+  })
   const [isLoaded, setIsLoaded] = useState(false)
+  const [showLevelSelector, setShowLevelSelector] = useState(false)
 
   useEffect(() => {
-    const saved = localStorage.getItem("sdgs-pro-course-progress")
+    const saved = localStorage.getItem(STORAGE_KEY)
     if (saved) {
-      setProgress(JSON.parse(saved))
+      const parsed = JSON.parse(saved)
+      setUserProgress(parsed)
     }
     setIsLoaded(true)
   }, [])
 
+  const saveProgress = (progress: UserProgress) => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress))
+    setUserProgress(progress)
+  }
+
+  const handleSelectLevel = (level: CourseLevel) => {
+    const newProgress: UserProgress = {
+      ...userProgress,
+      selectedLevel: level,
+      levelSelectedAt: new Date().toISOString(),
+      lessons: [] // Reset lessons when changing level
+    }
+    saveProgress(newProgress)
+    setShowLevelSelector(false)
+  }
+
+  const handleChangeLevel = () => {
+    setShowLevelSelector(true)
+  }
+
+  // Show level selector if no level selected or if requested
+  if (!isLoaded) {
+    return (
+      <div className="container py-8">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 w-48 bg-muted rounded" />
+          <div className="h-32 bg-muted rounded" />
+        </div>
+      </div>
+    )
+  }
+
+  if (!userProgress.selectedLevel || showLevelSelector) {
+    return (
+      <div className="container py-8">
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold">AIでWebアプリを作る実践講座</h1>
+          <p className="mt-2 text-muted-foreground">
+            あなたのペースに合わせて学習できます
+          </p>
+        </div>
+        <LevelSelector
+          onSelectLevel={handleSelectLevel}
+          currentLevel={userProgress.selectedLevel || undefined}
+        />
+      </div>
+    )
+  }
+
+  const phases = getPhasesByLevel(userProgress.selectedLevel)
+  const levelConfig = LEVEL_CONFIGS[userProgress.selectedLevel]
   const totalLessons = phases.reduce((sum, phase) => sum + phase.lessons.length, 0)
-  const completedLessons = progress.filter(p => p.completed).length
+  const completedLessons = userProgress.lessons.filter(p => p.completed).length
   const progressPercent = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0
 
   const getPhaseProgress = (phaseId: number) => {
@@ -36,7 +103,7 @@ export default function DashboardPage() {
     if (!phase) return { completed: 0, total: 0, percent: 0 }
 
     const completed = phase.lessons.filter(lesson =>
-      progress.some(p => p.lessonId === lesson.id && p.completed)
+      userProgress.lessons.some(p => p.lessonId === lesson.id && p.completed)
     ).length
 
     return {
@@ -47,7 +114,7 @@ export default function DashboardPage() {
   }
 
   const isLessonCompleted = (lessonId: string) => {
-    return progress.some(p => p.lessonId === lessonId && p.completed)
+    return userProgress.lessons.some(p => p.lessonId === lessonId && p.completed)
   }
 
   const getNextLesson = () => {
@@ -63,25 +130,25 @@ export default function DashboardPage() {
 
   const nextLesson = getNextLesson()
 
-  if (!isLoaded) {
-    return (
-      <div className="container py-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 w-48 bg-muted rounded" />
-          <div className="h-32 bg-muted rounded" />
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="container py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">ダッシュボード</h1>
-        <p className="mt-2 text-muted-foreground">
-          学習の進捗状況を確認しましょう
-        </p>
+      {/* Header with Level Badge */}
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Badge variant="secondary" className="text-lg px-3 py-1">
+              {levelConfig.icon} {levelConfig.nameJa}コース
+            </Badge>
+            <Button variant="ghost" size="sm" onClick={handleChangeLevel}>
+              <Settings className="h-4 w-4 mr-1" />
+              レベル変更
+            </Button>
+          </div>
+          <h1 className="text-3xl font-bold">ダッシュボード</h1>
+          <p className="mt-2 text-muted-foreground">
+            {levelConfig.description}
+          </p>
+        </div>
       </div>
 
       {/* Progress Overview */}
@@ -149,15 +216,19 @@ export default function DashboardPage() {
       {nextLesson && (
         <Card className="mb-8 border-primary/50 bg-primary/5">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
                 <Badge variant="secondary">次のレッスン</Badge>
                 <CardTitle className="mt-2">
-                  Phase {nextLesson.phase.id} - Lesson {nextLesson.lesson.number}: {nextLesson.lesson.title}
+                  Lesson {nextLesson.lesson.number}: {nextLesson.lesson.title}
                 </CardTitle>
                 <CardDescription className="mt-1">
                   {nextLesson.lesson.description}
                 </CardDescription>
+                <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  {nextLesson.lesson.duration}
+                </div>
               </div>
               <Button asChild>
                 <Link href={`/lessons/${nextLesson.lesson.id}`}>
@@ -170,8 +241,38 @@ export default function DashboardPage() {
         </Card>
       )}
 
+      {/* Completion Message */}
+      {completedLessons === totalLessons && totalLessons > 0 && (
+        <Card className="mb-8 border-yellow-500/50 bg-yellow-500/5">
+          <CardHeader>
+            <div className="flex items-center gap-4">
+              <Trophy className="h-12 w-12 text-yellow-500" />
+              <div>
+                <CardTitle className="text-yellow-700">
+                  🎉 {levelConfig.nameJa}コース修了おめでとうございます！
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  全{totalLessons}レッスンを完了しました。
+                  {userProgress.selectedLevel !== 'advanced' && (
+                    <span>次のレベルにチャレンジしてみませんか？</span>
+                  )}
+                </CardDescription>
+                {userProgress.selectedLevel !== 'advanced' && (
+                  <Button className="mt-4" variant="outline" onClick={handleChangeLevel}>
+                    次のレベルへ
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
+      )}
+
       {/* Phase Progress */}
-      <h2 className="text-xl font-bold mb-4">フェーズ別進捗</h2>
+      <h2 className="text-xl font-bold mb-4">
+        {userProgress.selectedLevel === 'beginner' ? 'ユニット' : 'フェーズ'}別進捗
+      </h2>
       <div className="space-y-4">
         {phases.map((phase) => {
           const phaseProgress = getPhaseProgress(phase.id)
@@ -182,7 +283,7 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Badge variant={phaseProgress.percent === 100 ? "default" : "outline"}>
-                      Phase {phase.id}
+                      {userProgress.selectedLevel === 'beginner' ? 'Unit' : 'Phase'} {phase.id}
                     </Badge>
                     <CardTitle className="text-lg">{phase.title}</CardTitle>
                   </div>
@@ -217,9 +318,14 @@ export default function DashboardPage() {
                         ) : (
                           <Circle className="h-4 w-4 text-muted-foreground shrink-0" />
                         )}
-                        <span className={`text-sm ${completed ? "text-muted-foreground line-through" : ""}`}>
-                          Lesson {lesson.number}: {lesson.title}
-                        </span>
+                        <div className="min-w-0">
+                          <span className={`text-sm block truncate ${completed ? "text-muted-foreground line-through" : ""}`}>
+                            L{lesson.number}: {lesson.title}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {lesson.duration}
+                          </span>
+                        </div>
                       </Link>
                     )
                   })}
@@ -229,6 +335,21 @@ export default function DashboardPage() {
           )
         })}
       </div>
+
+      {/* Level Info Footer */}
+      <Card className="mt-8 bg-muted/50">
+        <CardContent className="py-4">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>{levelConfig.icon}</span>
+              <span>{levelConfig.nameJa}コース: {levelConfig.estimatedTime} / {levelConfig.lessonCount}レッスン</span>
+            </div>
+            <Button variant="ghost" size="sm" onClick={handleChangeLevel}>
+              レベルを変更する
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

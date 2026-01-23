@@ -48,26 +48,64 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="border-y bg-muted/50 py-12">
+      {/* Level Selection Section */}
+      <section className="border-y bg-gradient-to-b from-muted/50 to-background py-16">
         <div className="container">
-          <div className="grid gap-8 md:grid-cols-4">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary">{phases.length}</div>
-              <div className="text-sm text-muted-foreground">フェーズ</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary">{totalLessons}</div>
-              <div className="text-sm text-muted-foreground">レッスン</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary">約{totalHours}時間</div>
-              <div className="text-sm text-muted-foreground">学習時間</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-primary">3つ</div>
-              <div className="text-sm text-muted-foreground">作れるアプリ</div>
-            </div>
+          <div className="mx-auto max-w-2xl text-center mb-10">
+            <h2 className="text-2xl font-bold">3つのコースから選べます</h2>
+            <p className="mt-2 text-muted-foreground">
+              あなたの経験に合わせたコースをお選びください
+            </p>
+          </div>
+          <div className="grid gap-6 md:grid-cols-3 max-w-4xl mx-auto">
+            <Card className="text-center hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="text-4xl mb-2">🌱</div>
+                <CardTitle>初心者</CardTitle>
+                <CardDescription>AI未経験の方</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <div>約50分 / 10レッスン</div>
+                  <div>動画で見るだけ</div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="relative text-center border-primary hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">おすすめ</Badge>
+                <div className="text-4xl mb-2">🌿</div>
+                <CardTitle>標準</CardTitle>
+                <CardDescription>AIを少し使ったことがある方</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <div>約5時間 / 20レッスン</div>
+                  <div>スクショ付き解説</div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="text-center hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="text-4xl mb-2">🌳</div>
+                <CardTitle>経験者</CardTitle>
+                <CardDescription>AIを毎日使う方</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <div>約4時間 / 22レッスン</div>
+                  <div>React/Next.js対応</div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="mt-8 text-center">
+            <Button asChild>
+              <Link href="/dashboard">
+                コースを選んで始める
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
           </div>
         </div>
       </section>
