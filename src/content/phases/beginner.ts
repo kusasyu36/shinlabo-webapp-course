@@ -21,6 +21,7 @@ export const beginnerPhases: Phase[] = [
           {
             id: "section1",
             title: "AIってなに？",
+            videoUrl: "/videos/beginner/webapp-lesson1.mp4",
             content: `## AIは「賢いお手伝いさん」
 
 AIとは、話しかけるだけで何でも答えてくれる「賢いお手伝いさん」のようなものです。
@@ -44,6 +45,7 @@ AIとは、話しかけるだけで何でも答えてくれる「賢いお手伝
           {
             id: "section2",
             title: "今日やること",
+            videoUrl: "/videos/beginner/webapp-lesson1.mp4",
             content: `## この講座でやること
 
 ### ゴール
@@ -83,6 +85,7 @@ AIとは、話しかけるだけで何でも答えてくれる「賢いお手伝
           {
             id: "section1",
             title: "AIのページを開こう",
+            videoUrl: "/videos/beginner/webapp-lesson2.mp4",
             content: `## Google AI Studioを開こう
 
 ### 手順（動画でも見れます）
@@ -107,6 +110,7 @@ AIとは、話しかけるだけで何でも答えてくれる「賢いお手伝
           {
             id: "section2",
             title: "画面の見方",
+            videoUrl: "/videos/beginner/webapp-lesson2.mp4",
             content: `## 画面の見方
 
 開けたら、こんな画面が出てきます：
@@ -153,6 +157,7 @@ AIとは、話しかけるだけで何でも答えてくれる「賢いお手伝
           {
             id: "section1",
             title: "最初の一言",
+            videoUrl: "/videos/beginner/webapp-lesson3.mp4",
             content: `## AIに「こんにちは」と言ってみよう
 
 ### やってみよう
@@ -172,6 +177,7 @@ AIが「こんにちは！何かお手伝いできることはありますか？
           {
             id: "section2",
             title: "いろいろ聞いてみよう",
+            videoUrl: "/videos/beginner/webapp-lesson3.mp4",
             content: `## 好きなことを聞いてみよう
 
 ### 試してみよう
@@ -224,6 +230,7 @@ AIが「こんにちは！何かお手伝いできることはありますか？
           {
             id: "section1",
             title: "アプリを作ってもらおう",
+            videoUrl: "/videos/beginner/webapp-lesson4.mp4",
             content: `## AIに「アプリを作って」とお願いしよう
 
 ### 魔法の言葉
@@ -250,6 +257,7 @@ AIが何やら難しそうな文字をたくさん書きます。
           {
             id: "section2",
             title: "アプリを動かしてみよう",
+            videoUrl: "/videos/beginner/webapp-lesson4.mp4",
             content: `## 作ったアプリを動かそう
 
 ### 手順（動画でも見れます）
@@ -305,6 +313,7 @@ AIが何やら難しそうな文字をたくさん書きます。
           {
             id: "section1",
             title: "もう少し詳しくお願いしよう",
+            videoUrl: "/videos/beginner/webapp-lesson5.mp4",
             content: `## もっと詳しくお願いしてみよう
 
 ### 以下をコピーして貼り付けてください
@@ -334,6 +343,7 @@ AIが何やら難しそうな文字をたくさん書きます。
           {
             id: "section2",
             title: "動いたか確認しよう",
+            videoUrl: "/videos/beginner/webapp-lesson5.mp4",
             content: `## 確認しよう
 
 ### チェックリスト
@@ -378,6 +388,7 @@ AIが何やら難しそうな文字をたくさん書きます。
           {
             id: "section1",
             title: "色を変えてみよう",
+            videoUrl: "/videos/beginner/webapp-lesson6.mp4",
             content: `## 色を変えてみよう
 
 ### AIに追加でお願いする
@@ -405,6 +416,7 @@ AIが何やら難しそうな文字をたくさん書きます。
           {
             id: "section2",
             title: "いろいろ変えてみよう",
+            videoUrl: "/videos/beginner/webapp-lesson6.mp4",
             content: `## 他にもいろいろ変えてみよう
 
 ### 試してみよう
@@ -449,6 +461,7 @@ AIにこんなお願いもできます：
           {
             id: "section1",
             title: "デスクトップに保存しよう",
+            videoUrl: "/videos/beginner/webapp-lesson7.mp4",
             content: `## デスクトップに保存しよう
 
 ### 手順
@@ -472,6 +485,7 @@ AIにこんなお願いもできます：
           {
             id: "section2",
             title: "いつでも開ける",
+            videoUrl: "/videos/beginner/webapp-lesson7.mp4",
             content: `## いつでも開けます
 
 ### 使い方
@@ -525,6 +539,7 @@ AIにこんなお願いもできます：
           {
             id: "section1",
             title: "メモアプリを作ろう",
+            videoUrl: "/videos/beginner/webapp-lesson8.mp4",
             content: `## メモアプリを作ろう
 
 ### 以下をコピーして貼り付けてください
@@ -554,6 +569,7 @@ AIにこんなお願いもできます：
           {
             id: "section2",
             title: "使ってみよう",
+            videoUrl: "/videos/beginner/webapp-lesson8.mp4",
             content: `## 使ってみよう
 
 ### 試してみよう
@@ -596,6 +612,7 @@ AIにこんなお願いもできます：
           {
             id: "section1",
             title: "見た目を変えよう",
+            videoUrl: "/videos/beginner/webapp-lesson9.mp4",
             content: `## 見た目を変えよう
 
 ### AIに追加でお願いする
@@ -623,6 +640,7 @@ AIにこんなお願いもできます：
           {
             id: "section2",
             title: "完成！",
+            videoUrl: "/videos/beginner/webapp-lesson9.mp4",
             content: `## 完成！
 
 ### チェックリスト
@@ -664,6 +682,7 @@ AIにこんなお願いもできます：
           {
             id: "section1",
             title: "振り返り",
+            videoUrl: "/videos/beginner/webapp-lesson10.mp4",
             content: `## やったことの振り返り
 
 ### 今日やったこと
@@ -689,6 +708,7 @@ AIにこんなお願いもできます：
           {
             id: "section2",
             title: "これからの一歩",
+            videoUrl: "/videos/beginner/webapp-lesson10.mp4",
             content: `## あなたにもできた！
 
 ### 大事なこと
